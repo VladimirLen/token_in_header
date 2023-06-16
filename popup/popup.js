@@ -70,10 +70,16 @@ async function saveData() {
   const token = await fetch(`http://localhost:5555/token?login_sudir=${textSudir.value}&tech_login=${textTech.value}`)
   .then(res => res.text())
   .then(res => {
+    if(res) {
+      textSudir.style = "border-color: green";
+    } else {
+      textSudir.style = "border-color: red";
+    }
+
     return res;
   })
   .catch(err => {
-    alert('err:', err);
+    textSudir.style = "border-color: red";
   });
 
   storeInBrowserStorage({config:create_configuration_data(token)},function() {
