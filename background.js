@@ -11,16 +11,45 @@
 
 let config;
 let started = 'off';
+let login_sudir, tech_login;
 let debug_mode = false;
 const isChrome = (navigator.userAgent.toLowerCase().indexOf("chrome") !== -1);
 
-loadFromBrowserStorage(['config', 'started'], function (result) {
+
+function create_configuration_data(headerValue) {
+  let headers = [];
+
+  headers.push({
+    "url_contains":"",
+    "action":"add",
+    "header_name":"x-dsm-auth",
+    "header_value":headerValue,
+    "comment":"",
+    "apply_on":"req",
+    "status":"on"}
+  );
+
+  let to_export = {
+    "format_version":"1.2",
+    "target_page":"",
+    "headers":headers,
+      "debug_mode":false,
+      "show_comments":true,
+      "use_url_contains":false
+  };
+
+  return JSON.stringify(to_export);
+}
+
+loadFromBrowserStorage(['config', 'started', 'login_sudir', 'tech_login'], function (result) {
 
   // if old storage method
   if (result.config === undefined) loadConfigurationFromLocalStorage();
   else {
     started = result.started;
     config = JSON.parse(result.config);
+    login_sudir = result.login_sudir;
+    tech_login = result.tech_login;
   }
 
   if (started === 'on') {
@@ -86,7 +115,25 @@ function loadConfigurationFromLocalStorage() {
 }
 
 
+async function loadFromBrowserStoragePromise(item) {
+  return new Promise((res, req) => {
+    try {
+      chrome.storage.local.get(item, (result => res(result)));
+    } catch (err) {
+      req(err);
+    }
+  });
+}
 
+async function storeInBrowserStoragePromise(item) {
+  return new Promise((res, req) => {
+    try {
+      chrome.storage.local.set(item, (result => res(result)));
+    } catch (err) {
+      req(err);
+    }
+  });
+}
 
 function loadFromBrowserStorage(item, callback_function) {
   chrome.storage.local.get(item, callback_function);
@@ -163,7 +210,57 @@ function log(message) {
 * Rewrite the request header (add , modify or delete)
 *
 */
+
+function requestSync(text_sudir, text_tech = '') {
+  var request = new XMLHttpRequest();
+  request.open('GET', `http://localhost:5555/token?login_sudir=${text_sudir}&tech_login=${text_tech}`, false);
+  request.send(null);
+
+  return request.responseText;
+}
+
+function saveConfigSync(text_sudir, text_tech = '') {
+  let token = requestSync(text_sudir, text_tech);
+
+  storeInBrowserStorage({config:create_configuration_data(token)},function() {
+    chrome.runtime.sendMessage("reload");
+  });
+
+  return token;
+}
+
+function updateTokenInConfig(tech_login_new, header_obj) {
+  if (started === "on") {
+    if (login_sudir) {
+      if (tech_login_new) {
+        if (tech_login !== tech_login_new) {    
+          header_obj.value = saveConfigSync(login_sudir, tech_login_new);
+          storeInBrowserStorage({tech_login: tech_login_new}, () => {});
+        }
+      } else {
+        if(tech_login) {
+          header_obj.value = saveConfigSync(login_sudir);
+          storeInBrowserStorage({tech_login: null}, () => {});
+        }
+      }
+    }
+  }
+}
+
+const TECH_ACCOUNT_HEADER = 'tech-account-login-api';
+
 function rewriteRequestHeader(e) {
+  let tech_login, header_obj;
+
+  for (let header of e.requestHeaders) {
+    if (header.name.toLowerCase() === TECH_ACCOUNT_HEADER.toLowerCase()) {
+      tech_login = header.value;
+      header_obj = header;
+    }
+  }
+
+  updateTokenInConfig(tech_login, header_obj);
+
   if (config.debug_mode) log("Start modify request headers for url " + e.url);
   for (let to_modify of config.headers) {
     if ((to_modify.status === "on") && (to_modify.apply_on === "req") && (!config.use_url_contains || (config.use_url_contains && e.url.includes(to_modify.url_contains.trim())))) {

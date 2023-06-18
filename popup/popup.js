@@ -1,6 +1,5 @@
 const button = document.getElementById('11');
 const textSudir = document.getElementById('22');
-const textTech = document.getElementById('33');
 const startStop = document.getElementById('44');
 
 let started = 'on';
@@ -15,7 +14,6 @@ window.onload = function() {
 function initConfigurationPage() {
   loadFromBrowserStorage(['started', 'login_sudir', 'tech_login'], function (result) {
     if (result.login_sudir) textSudir.value = result.login_sudir;
-    if (result.tech_login) textTech.value = result.tech_login;
 
     started = result.started;
     if (started==="on") startStop.style = "color: green";
@@ -66,8 +64,8 @@ async function updateButton() {
 }
 
 async function saveData() {
-  storeInBrowserStorage({login_sudir: textSudir.value, tech_login: textTech.value});
-  const token = await fetch(`http://localhost:5555/token?login_sudir=${textSudir.value}&tech_login=${textTech.value}`)
+  storeInBrowserStorage({login_sudir: textSudir.value});
+  const token = await fetch(`http://localhost:5555/token?login_sudir=${textSudir.value}`)
   .then(res => res.text())
   .then(res => {
     if(res) {
