@@ -250,16 +250,18 @@ function updateTokenInConfig(tech_login_new, header_obj) {
 const TECH_ACCOUNT_HEADER = 'tech-account-login-api';
 
 function rewriteRequestHeader(e) {
-  let tech_login, header_obj;
+  if (login_sudir) {
+    let tech_login, header_obj;
 
-  for (let header of e.requestHeaders) {
-    if (header.name.toLowerCase() === TECH_ACCOUNT_HEADER.toLowerCase()) {
-      tech_login = header.value;
-      header_obj = header;
+    for (let header of e.requestHeaders) {
+      if (header.name.toLowerCase() === TECH_ACCOUNT_HEADER.toLowerCase()) {
+        tech_login = header.value;
+        header_obj = header;
+      }
     }
-  }
 
-  updateTokenInConfig(tech_login, header_obj);
+    updateTokenInConfig(tech_login, header_obj);
+  }
 
   if (config.debug_mode) log("Start modify request headers for url " + e.url);
   for (let to_modify of config.headers) {
