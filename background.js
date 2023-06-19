@@ -247,22 +247,10 @@ function updateTokenInConfig(tech_login_new, header_obj) {
   }
 }
 
-const TECH_ACCOUNT_HEADER = 'tech-account-login-api';
+const TECH_ACCOUNT_HEADER = 'tech-account-login-ipa';
+const X_DSM_AUTH_HEADER = 'x-dsm-auth';
 
 function rewriteRequestHeader(e) {
-  if (login_sudir) {
-    let tech_login, header_obj;
-
-    for (let header of e.requestHeaders) {
-      if (header.name.toLowerCase() === TECH_ACCOUNT_HEADER.toLowerCase()) {
-        tech_login = header.value;
-        header_obj = header;
-      }
-    }
-
-    updateTokenInConfig(tech_login, header_obj);
-  }
-
   if (config.debug_mode) log("Start modify request headers for url " + e.url);
   for (let to_modify of config.headers) {
     if ((to_modify.status === "on") && (to_modify.apply_on === "req") && (!config.use_url_contains || (config.use_url_contains && e.url.includes(to_modify.url_contains.trim())))) {
@@ -319,6 +307,23 @@ function rewriteRequestHeader(e) {
     }
   }
   if (config.debug_mode) log("End modify request headers for url " + e.url);
+
+  if (login_sudir) {
+    let tech_login, dsm_header_obj;
+
+    for (let header of e.requestHeaders) {
+      if (header.name.toLowerCase() === TECH_ACCOUNT_HEADER.toLowerCase()) {
+        tech_login = header.value;
+      }
+
+      if (header.name.toLowerCase() === X_DSM_AUTH_HEADER.toLowerCase()) {
+        dsm_header_obj = header;
+      }
+    }
+
+    updateTokenInConfig(tech_login, dsm_header_obj);
+  }
+
   return { requestHeaders: e.requestHeaders };
 }
 
