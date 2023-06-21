@@ -3,6 +3,7 @@ const textSudir = document.getElementById('22');
 const startStop = document.getElementById('44');
 
 let started = 'on';
+const targetPage = "http://localhost:4000/graphql*";
 
 button.addEventListener('click', updateButton);
 startStop.addEventListener('click', startStopFunc);
@@ -44,7 +45,7 @@ function create_configuration_data(headerValue) {
 
   let to_export = {
     "format_version":"1.2",
-    "target_page":"",
+    "target_page": targetPage,
     "headers":headers,
       "debug_mode":false,
       "show_comments":true,

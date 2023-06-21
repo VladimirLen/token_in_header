@@ -15,6 +15,7 @@ let login_sudir, tech_login;
 let debug_mode = false;
 const isChrome = (navigator.userAgent.toLowerCase().indexOf("chrome") !== -1);
 
+const targetPage = "http://localhost:4000/graphql*";
 
 function create_configuration_data(headerValue) {
   let headers = [];
@@ -31,7 +32,7 @@ function create_configuration_data(headerValue) {
 
   let to_export = {
     "format_version":"1.2",
-    "target_page":"",
+    "target_page":targetPage,
     "headers":headers,
       "debug_mode":false,
       "show_comments":true,
