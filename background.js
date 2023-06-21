@@ -219,12 +219,18 @@ function requestSync(text_sudir, text_tech = '') {
   return request.responseText;
 }
 
-function saveConfigSync(text_sudir, text_tech = '') {
-  let token = requestSync(text_sudir, text_tech);
+let lastTime, tokenCache, techAccountLoginIpa;
 
-  storeInBrowserStorage({config:create_configuration_data(token)},function() {
-    chrome.runtime.sendMessage("reload");
-  });
+function saveConfigSync(text_sudir, text_tech = '') {
+  const time = new Date().valueOf();
+  let token = tokenCache;
+
+  if (!tokenCache || text_tech !== techAccountLoginIpa || time - lastTime > 1000) {
+    token = requestSync(text_sudir, text_tech);
+    lastTime = new Date().valueOf();
+    tokenCache = token;
+    techAccountLoginIpa = text_tech;
+  }
 
   return token;
 }
@@ -233,15 +239,7 @@ function updateTokenInConfig(tech_login_new, header_obj) {
   if (started === "on") {
     if (login_sudir) {
       if (tech_login_new) {
-        if (tech_login !== tech_login_new) {    
-          header_obj.value = saveConfigSync(login_sudir, tech_login_new);
-          storeInBrowserStorage({tech_login: tech_login_new}, () => {});
-        }
-      } else {
-        if(tech_login) {
-          header_obj.value = saveConfigSync(login_sudir);
-          storeInBrowserStorage({tech_login: null}, () => {});
-        }
+        header_obj.value = saveConfigSync(login_sudir, tech_login_new);
       }
     }
   }
